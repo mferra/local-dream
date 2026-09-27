@@ -1,0 +1,68 @@
+# Converter environment for Anima checkpoints -> Local Dream QNN packages.
+# Built and run by container/anima/convert-anima.sh.
+#
+# Two Python environments, because their pins conflict:
+#   /opt/venv-ref  PyTorch + ComfyUI's dependencies: loads the checkpoint,
+#                  checks the export model against ComfyUI's reference
+#                  implementation and exports ONNX.
+#   /opt/venv-qnn  what the QNN 2.28 converter needs (the same pins as the
+#                  official SDXL conversion scripts).
+FROM docker.io/library/ubuntu:22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        git \
+        libc++1 \
+        libc++abi1 \
+        python3.10 \
+        python3.10-venv \
+        unzip \
+        zip \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG TORCH_INDEX=https://download.pytorch.org/whl/cpu
+RUN python3.10 -m venv /opt/venv-ref \
+    && /opt/venv-ref/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv-ref/bin/pip install --no-cache-dir --index-url ${TORCH_INDEX} \
+        torch==2.8.0 torchvision==0.23.0 \
+    && /opt/venv-ref/bin/pip install --no-cache-dir \
+        comfy-aimdo==0.5.5 \
+        comfy-kitchen==0.2.35 \
+        einops \
+        numpy==1.26.4 \
+        onnx==1.18.0 \
+        psutil \
+        pyyaml \
+        safetensors \
+        scipy \
+        sentencepiece \
+        tokenizers \
+        tqdm \
+        transformers==4.56.2
+
+RUN python3.10 -m venv /opt/venv-qnn \
+    && /opt/venv-qnn/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv-qnn/bin/pip install --no-cache-dir \
+        numpy==1.26.4 \
+        onnx==1.18.0 \
+        packaging \
+        pandas==2.2.3 \
+        pyyaml
+
+# QNN SDK 2.28: the version the official conversion guide pins, and the one
+# the published Anima packages were built with.
+ARG QNN_VERSION=2.28.0.241029
+RUN mkdir -p /opt/qnn \
+    && cd /opt/qnn \
+    && unzip -q /cache/qnn-${QNN_VERSION}.zip \
+        "qairt/${QNN_VERSION}/bin/x86_64-linux-clang/*" \
+        "qairt/${QNN_VERSION}/lib/x86_64-linux-clang/*" \
+        "qairt/${QNN_VERSION}/lib/python/*"
+ENV QNN_SDK_ROOT=/opt/qnn/qairt/${QNN_VERSION}
+
+# Native deps of the converter/quantizer modules (libPyIrGraph etc.).
+RUN apt-get update && apt-get install -y --no-install-recommends libatomic1 libpython3.10 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work

@@ -23,3 +23,10 @@ app/src/main/assets/ditlibs
 
 # Container build: SDK/NDK archives (redistribution not permitted; see container/downloads.sha256)
 /container/downloads/
+
+# Model weights (multi-GB; never versioned)
+*.safetensors
+
+# Anima converter scratch space (container/anima/convert-anima.sh)
+/container/work/
+__pycache__/
