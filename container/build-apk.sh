@@ -5,6 +5,7 @@
 #
 #   container/build-apk.sh              # basic (no NSFW filter), release
 #   FLAVOR=filter container/build-apk.sh
+#   WITH_DIT=0 container/build-apk.sh   # skip the DiT engine
 #
 # Host-side state:
 #   container/downloads/              downloaded SDK/NDK archives, git-ignored:
@@ -16,7 +17,11 @@
 #                                     be signed with the same key
 #   volumes local-dream-gradle/-cargo  Gradle and cargo download caches
 #
-# The DiT engine (Z-Image / FLUX.2 / Qwen, SM8750+ only) is not built here.
+# The DiT engine (libdit_engine.so + HTP v79/v81 skels: Z-Image Turbo, FLUX.2
+# Klein, Qwen Image 2.1; SM8750+ devices only) is built in the public
+# snapdragon-toolchain image, which carries exactly the Hexagon SDK 6.6.0.0
+# and NDK r29 that app/src/main/cpp/dit/build.sh documents. Pinned by digest
+# (tag v0.7).
 set -euo pipefail
 
 FLAVOR=${FLAVOR:-basic}
@@ -29,6 +34,8 @@ REPO=$(cd "$(dirname "$0")/.." && pwd)
 CACHE=${LOCAL_DREAM_CACHE:-$REPO/container/downloads}
 SIGNING=${LOCAL_DREAM_SIGNING_DIR:-$HOME/.config/local-dream-signing}
 IMAGE=local-dream-builder
+DIT_IMAGE=ghcr.io/snapdragon-toolchain/arm64-android@sha256:c012b8174f4154088ee027077e9cb80e68cc9a494d46f63454a050fa4789897b
+WITH_DIT=${WITH_DIT:-1}
 RUNTIME=${CONTAINER_RUNTIME:-$(command -v podman || command -v docker)}
 
 NDK_ZIP=android-ndk-r28c-linux.zip
@@ -78,6 +85,19 @@ ORG_GRADLE_PROJECT_RELEASE_KEY_ALIAS=localdream
 ORG_GRADLE_PROJECT_RELEASE_KEY_PASSWORD=$password
 EOF
     chmod 600 "$SIGNING/keystore.jks" "$SIGNING/signing.env"
+fi
+
+if [ "$WITH_DIT" = 1 ]; then
+    echo ">> Building DiT engine"
+    "$RUNTIME" run --rm -v "$REPO:/src" -w /src "$DIT_IMAGE" \
+        bash -euo pipefail -c '
+            git config --global --add safe.directory "*"
+            bash app/src/main/cpp/dit/build.sh
+        '
+else
+    # A previous build's engine would otherwise still be packaged.
+    rm -f "$REPO/app/src/main/jniLibs/arm64-v8a/libdit_engine.so"
+    rm -rf "$REPO/app/src/main/assets/ditlibs"
 fi
 
 variant="$(tr '[:lower:]' '[:upper:]' <<< "${FLAVOR:0:1}")${FLAVOR:1}"
