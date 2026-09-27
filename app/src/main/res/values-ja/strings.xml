@@ -417,10 +417,6 @@
     <string name="image_load_failed">画像の読み込みに失敗しました</string>
 
     <!-- Report -->
-    <string name="report">報告</string>
-    <string name="report_image_confirm">この画像が不適切だと感じた場合は報告してください。パラメータと画像が審査のためサーバーに送信されます。</string>
-    <string name="report_success">ご報告ありがとうございます。</string>
-    <string name="report_failed">報告に失敗しました</string>
 
     <!-- Error messages extras -->
     <string name="error_title">エラー</string>

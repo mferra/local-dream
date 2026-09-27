@@ -732,8 +732,6 @@ static void registerUpscaleEndpoint(httplib::Server &svr) {
       res.set_header("X-Output-Width", std::to_string(final_width));
       res.set_header("X-Output-Height", std::to_string(final_height));
       res.set_header("X-Duration-Ms", std::to_string(duration));
-      res.set_header("Access-Control-Expose-Headers",
-                     "X-Output-Width,X-Output-Height,X-Duration-Ms");
 
       if (tempUpscalerApp) {
         tempUpscalerApp.reset();
@@ -902,15 +900,9 @@ int main(int argc, char **argv) {
 
   // --- HTTP Server ---
   httplib::Server svr;
-  svr.set_default_headers({
-      {"Access-Control-Allow-Origin", "*"},
-      {"Access-Control-Allow-Methods", "GET, POST, OPTIONS"},
-      {"Access-Control-Allow-Headers", "Content-Type, Authorization"},
-      {"Access-Control-Max-Age", "86400"},
-  });
-  svr.Options(R"(.*)", [](const httplib::Request &, httplib::Response &res) {
-    res.status = 204;
-  });
+  // No CORS headers: the app's clients are native (OkHttp) and never need
+  // them, and without them a web page open in the phone's browser cannot
+  // drive this server's JSON endpoints through 127.0.0.1.
   svr.Get("/health", [](const httplib::Request &, httplib::Response &res) {
     res.status = 200;
   });

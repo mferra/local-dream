@@ -39,6 +39,11 @@ apply_local_patch("${CMAKE_CURRENT_SOURCE_DIR}/ggml.patch" "${SDCPP_DIR}/ggml")
 set(GGML_HEXAGON ON CACHE BOOL "" FORCE)
 set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
 set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
+# Pinned off (already the upstream defaults): the RPC backend offloads
+# tensors to a remote host over TCP, and KleidiAI is fetched from the network
+# at configure time.
+set(GGML_RPC OFF CACHE BOOL "" FORCE)
+set(GGML_CPU_KLEIDIAI OFF CACHE BOOL "" FORCE)
 set(SD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SD_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 # The skels are cross-compiled for the DSP by the Hexagon toolchain; keep the

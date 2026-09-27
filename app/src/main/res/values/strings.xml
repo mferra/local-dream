@@ -427,10 +427,6 @@
     <string name="image_load_failed">Failed to load image</string>
 
     <!-- Report -->
-    <string name="report">Report</string>
-    <string name="report_image_confirm">Report this image if you feel it is inappropriate. The parameters and image will be sent to the server for review.</string>
-    <string name="report_success">Thanks for your report.</string>
-    <string name="report_failed">Report failed</string>
 
     <!-- Error messages extras -->
     <string name="error_title">Error</string>

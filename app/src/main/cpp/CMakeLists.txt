@@ -80,6 +80,11 @@ set(MNN_BUILD_FOR_ANDROID_COMMAND ON CACHE BOOL "" FORCE)
 set(MNN_USE_LOGCAT OFF CACHE BOOL "" FORCE)
 set(MNN_OPENCL ON CACHE BOOL "" FORCE)
 set(MNN_SUPPORT_TRANSFORMER_FUSE ON CACHE BOOL "" FORCE)
+# Pinned off (already the upstream defaults): MNN_INTERNAL is Alibaba's
+# metrics logging / model authentication over libcurl, and the LLM engine
+# carries a Hugging Face / ModelScope downloader. Neither is used here.
+set(MNN_INTERNAL OFF CACHE BOOL "" FORCE)
+set(MNN_BUILD_LLM OFF CACHE BOOL "" FORCE)
 add_subdirectory(3rdparty/MNN)
 
 set(XTENSOR_USE_XSIMD ON)

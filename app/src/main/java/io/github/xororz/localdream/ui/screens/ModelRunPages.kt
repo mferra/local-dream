@@ -47,7 +47,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Report
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -103,7 +102,6 @@ internal fun ModelRunResultPage(
     generationParams: GenerationParameters?,
     // Newest few items only (bounded query); drives the thumbnail strip.
     recentHistory: List<HistoryItem>,
-    showReportButton: Boolean,
     showUpscaleButton: Boolean,
     upscaleEnabled: Boolean,
     showUltrafixButton: Boolean,
@@ -116,7 +114,6 @@ internal fun ModelRunResultPage(
     // favorite button).
     isFavorite: Boolean?,
     onFavoriteClick: () -> Unit,
-    onReportClick: () -> Unit,
     onUpscaleClick: () -> Unit,
     onUltrafixClick: () -> Unit,
     onSaveClick: (Bitmap) -> Unit,
@@ -221,17 +218,6 @@ internal fun ModelRunResultPage(
                                                     Icons.Default.FavoriteBorder
                                                 },
                                                 contentDescription = "toggle favorite",
-                                            )
-                                        }
-                                    }
-
-                                    if (showReportButton) {
-                                        FilledTonalIconButton(
-                                            onClick = onReportClick,
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Report,
-                                                contentDescription = "report inappropriate content",
                                             )
                                         }
                                     }

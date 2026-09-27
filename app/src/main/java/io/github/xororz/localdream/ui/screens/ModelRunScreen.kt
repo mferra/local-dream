@@ -135,7 +135,6 @@ import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.github.xororz.localdream.BuildConfig
 import io.github.xororz.localdream.R
 import io.github.xororz.localdream.data.GenerationDefaults
 import io.github.xororz.localdream.data.GenerationMode
@@ -168,7 +167,6 @@ import io.github.xororz.localdream.utils.LogCapture
 import io.github.xororz.localdream.utils.ParamShare
 import io.github.xororz.localdream.utils.ParamShareField
 import io.github.xororz.localdream.utils.performUpscale
-import io.github.xororz.localdream.utils.reportImage
 import io.github.xororz.localdream.utils.saveImage
 import io.github.xororz.localdream.utils.saveImageFromFile
 import java.io.File
@@ -234,8 +232,6 @@ fun ModelRunScreen(
     val msgSaveFailed = stringResource(R.string.save_failed_detail)
     val msgImg2imgFailed = stringResource(R.string.img2img_failed_detail)
     val msgPleaseCropFirst = stringResource(R.string.please_crop_first)
-    val msgReportSuccess = stringResource(R.string.report_success)
-    val msgReportFailed = stringResource(R.string.report_failed)
     val msgNoImageAvailable = stringResource(R.string.no_image_available)
     val msgImageLoadFailed = stringResource(R.string.image_load_failed)
     val msgGenerationInterrupted = stringResource(R.string.generation_interrupted)
@@ -393,7 +389,6 @@ fun ModelRunScreen(
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
     var generationStartTime by remember { mutableStateOf<Long?>(null) }
     var hasInitialized by remember { mutableStateOf(false) }
-    var showReportDialog by remember { mutableStateOf(false) }
 
     // The prompt fields live on page 0. When the user swipes to the result or
     // history page the suggestion popup is anchored absolutely and would linger,
@@ -2887,7 +2882,6 @@ fun ModelRunScreen(
                             imageVersion = imageVersion,
                             generationParams = generationParams,
                             recentHistory = recentHistory,
-                            showReportButton = BuildConfig.FLAVOR == "filter",
                             // Upscaling is only offered for the NPU runtime and resolutions <= 1024.
                             // A CPU diffusion backend never initializes the QNN
                             // runtime, so its /upscale cannot load the .bin
@@ -2937,7 +2931,6 @@ fun ModelRunScreen(
                                     }
                                 }
                             },
-                            onReportClick = { showReportDialog = true },
                             onUpscaleClick = { showUpscalerDialog = true },
                             onUltrafixClick = { showUltrafixConfirmDialog = true },
                             onSaveClick = { bitmap ->
@@ -3099,43 +3092,6 @@ fun ModelRunScreen(
             )
         }
     }
-    if (showReportDialog && currentBitmap != null && generationParams != null) {
-        ModelRunConfirmDialog(
-            title = stringResource(R.string.report),
-            text = stringResource(R.string.report_image_confirm),
-            confirmText = stringResource(R.string.report),
-            dismissText = stringResource(R.string.cancel),
-            destructiveConfirm = true,
-            onConfirm = {
-                showReportDialog = false
-                coroutineScope.launch {
-                    currentBitmap?.let { bitmap ->
-                        reportImage(
-                            bitmap = bitmap,
-                            modelName = model?.name ?: "",
-                            params = generationParams!!,
-                            onSuccess = {
-                                Toast.makeText(
-                                    context,
-                                    msgReportSuccess,
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                            },
-                            onError = {
-                                Toast.makeText(
-                                    context,
-                                    msgReportFailed,
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                            },
-                        )
-                    }
-                }
-            },
-            onDismiss = { showReportDialog = false },
-        )
-    }
-
     if (showParametersDialog && generationParams != null) {
         GenerationParamsDialog(
             title = stringResource(R.string.params_detail),

@@ -417,10 +417,6 @@
     <string name="image_load_failed">加载图像失败</string>
 
     <!-- Report -->
-    <string name="report">举报</string>
-    <string name="report_image_confirm">如果你认为此图像不当，可以举报。参数和图像将发送到服务器进行审核。</string>
-    <string name="report_success">感谢你的举报。</string>
-    <string name="report_failed">举报失败</string>
 
     <!-- Error messages extras -->
     <string name="error_title">错误</string>
