@@ -20,3 +20,6 @@ app/src/main/assets/licenses/qnn-*
 
 app/src/main/cpp/build/
 app/src/main/assets/ditlibs
+
+# Container build: SDK/NDK archives (redistribution not permitted; see container/downloads.sha256)
+/container/downloads/

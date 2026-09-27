@@ -1,0 +1,70 @@
+# Build environment for Local Dream: everything the native core and the APK
+# need, so nothing is installed on the host. Built and run by build-apk.sh,
+# which downloads the large archives once into a host cache and mounts it at
+# /cache while the image builds.
+FROM docker.io/library/ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        git \
+        ninja-build \
+        openjdk-21-jdk-headless \
+        python3 \
+        unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Android NDK r28, at the path app/src/main/cpp/CMakePresets.json hardcodes.
+ARG NDK_ZIP=android-ndk-r28c-linux.zip
+RUN mkdir -p /data \
+    && unzip -q /cache/${NDK_ZIP} -d /data \
+    && mv /data/android-ndk-r28* /data/android-ndk-r28
+ENV ANDROID_NDK_ROOT=/data/android-ndk-r28
+
+# Qualcomm AI Runtime (QNN) SDK. Only the parts app/src/main/cpp/CMakeLists.txt
+# reads: headers, the SampleApp sources, the Android and Hexagon libraries and
+# the license notices.
+ARG QNN_VERSION=2.50.0.260828
+RUN mkdir -p /opt/qairt \
+    && cd /opt/qairt \
+    && unzip -q /cache/qairt-${QNN_VERSION}.zip \
+        "qairt/${QNN_VERSION}/include/*" \
+        "qairt/${QNN_VERSION}/examples/QNN/SampleApp/*" \
+        "qairt/${QNN_VERSION}/lib/aarch64-android/*" \
+        "qairt/${QNN_VERSION}/lib/hexagon-v*/unsigned/*" \
+        "qairt/${QNN_VERSION}/LICENSE.pdf" \
+        "qairt/${QNN_VERSION}/NOTICE.txt" \
+        "qairt/${QNN_VERSION}/QNN_NOTICE.txt"
+ENV QNN_SDK_ROOT=/opt/qairt/qairt/${QNN_VERSION}
+
+# Android SDK: the compileSdk platform and build tools, licenses pre-accepted
+# so Gradle never has to prompt.
+ARG CMDLINE_TOOLS_ZIP=commandlinetools-linux-16111833_latest.zip
+ENV ANDROID_HOME=/opt/android-sdk
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools \
+    && unzip -q /cache/${CMDLINE_TOOLS_ZIP} -d ${ANDROID_HOME}/cmdline-tools \
+    && mv ${ANDROID_HOME}/cmdline-tools/cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest \
+    && yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null \
+    && ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager \
+        "platforms;android-37.0" \
+        "build-tools;37.0.0" \
+        > /dev/null
+
+# Rust, for tokenizers-cpp's Rust core, with the Android target. Pinned: from
+# 1.89 on, dangerous_implicit_autorefs is deny-by-default and rejects the
+# pinned tokenizers-cpp (rust/src/lib.rs).
+ARG RUST_VERSION=1.88.0
+ENV RUSTUP_HOME=/opt/rustup \
+    CARGO_HOME=/opt/cargo \
+    PATH=/opt/cargo/bin:${PATH}
+RUN curl -fsSL https://sh.rustup.rs \
+        | sh -s -- -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} \
+    && rustup target add aarch64-linux-android
+
+# The repo is bind-mounted; with rootless podman its files show up as root's.
+RUN git config --global --add safe.directory '*'
+
+WORKDIR /src
